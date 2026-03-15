@@ -1,26 +1,69 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* ── Core Palette ─────────────────────────────── */
+  --color-bg:        #0D0D0D;
+  --color-surface:   #161616;
+  --color-surface-2: #1E1E1E;
+  --color-border:    #272727;
+  --color-border-2:  #383838;
+
+  /* ── Brand ────────────────────────────────────── */
+  --color-primary:       #BFF549;
+  --color-primary-hover: #AADB3A;
+  --color-primary-dim:   #1a2608;
+
+  /* ── Text ─────────────────────────────────────── */
+  --color-text-1: #FFFFFF;
+  --color-text-2: #A1A1A1;
+  --color-text-3: #555555;
+
+  /* ── Ticket Status ────────────────────────────── */
+  --color-new:               #3B82F6;
+  --color-assigned:          #8B5CF6;
+  --color-in-progress:       #F59E0B;
+  --color-awaiting-parts:    #F97316;
+  --color-awaiting-approval: #EAB308;
+  --color-closed:            #BFF549;
+  --color-cancelled:         #6B7280;
+  --color-urgent:            #EF4444;
+
+  /* ── Fonts ────────────────────────────────────── */
+  --font-sans:    var(--font-inter), 'Inter', system-ui, sans-serif;
+  --font-heading: var(--font-jakarta), system-ui, sans-serif;
+  --font-mono:    var(--font-geist-mono), 'GeistMono', monospace;
+
+  /* ── Layout ───────────────────────────────────── */
+  --sidebar-width: 248px;
+  --header-height: 64px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ── Base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { background: #0D0D0D; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #0D0D0D;
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+/* ── Scrollbar ────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #3A3A3A; }
+
+/* ── Focus Ring ───────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #BFF549;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
