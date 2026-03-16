@@ -29,21 +29,39 @@ export function StatusTabs() {
   }
 
   return (
-    <div className="flex items-center gap-1 flex-wrap">
-      {TABS.map(tab => (
-        <button
-          key={tab.value}
-          onClick={() => setStatus(tab.value)}
-          className={cn(
-            'px-3 py-1.5 rounded-xl text-xs font-medium transition-colors',
-            current === tab.value
-              ? 'bg-[#BFF549] text-[#0D0D0D]'
-              : 'bg-[#1E1E1E] text-[#A1A1A1] hover:bg-[#272727] hover:text-white border border-[#272727]'
-          )}
+    <>
+      {/* Mobile dropdown */}
+      <div className="sm:hidden">
+        <select
+          value={current}
+          onChange={e => setStatus(e.target.value)}
+          className="bg-[#1E1E1E] border border-[#272727] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#BFF549]/50 w-full"
         >
-          {tab.label}
-        </button>
-      ))}
-    </div>
+          {TABS.map(tab => (
+            <option key={tab.value} value={tab.value}>
+              {tab.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Desktop tabs */}
+      <div className="hidden sm:flex items-center gap-1 flex-wrap">
+        {TABS.map(tab => (
+          <button
+            key={tab.value}
+            onClick={() => setStatus(tab.value)}
+            className={cn(
+              'px-3 py-1.5 rounded-xl text-xs font-medium transition-colors',
+              current === tab.value
+                ? 'bg-[#BFF549] text-[#0D0D0D]'
+                : 'bg-[#1E1E1E] text-[#A1A1A1] hover:bg-[#272727] hover:text-white border border-[#272727]'
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </>
   )
 }

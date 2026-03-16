@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Search, Menu, X } from 'lucide-react'
+import { Bell, Menu, X } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
@@ -8,19 +8,19 @@ import { cn } from '@/lib/utils'
 
 const TITLES: Record<string, string> = {
   '/':              'Dashboard',
-  '/tickets':       'Tickets',
   '/approvals':     'Approvals',
   '/notifications': 'Notifications',
-  '/history':       'History',
+  '/reports':       'Reports',
   '/suppliers':     'Suppliers',
+  '/settings':      'Settings',
 }
 
 const MOBILE_NAV = [
   { href: '/',              label: 'Home' },
-  { href: '/tickets',       label: 'Tickets' },
   { href: '/approvals',     label: 'Approvals' },
   { href: '/notifications', label: 'Alerts' },
-  { href: '/history',       label: 'History' },
+  { href: '/reports',       label: 'Reports' },
+  { href: '/settings',      label: 'Settings' },
 ]
 
 export function Header() {

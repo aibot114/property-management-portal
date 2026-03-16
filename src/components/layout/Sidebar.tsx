@@ -5,10 +5,9 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
-  Ticket,
   CheckCircle,
   Bell,
-  Clock,
+  BarChart2,
   Store,
   Settings,
   ChevronRight,
@@ -16,10 +15,9 @@ import {
 
 const NAV_ITEMS = [
   { href: '/',              label: 'Dashboard',    icon: LayoutDashboard },
-  { href: '/tickets',       label: 'Tickets',       icon: Ticket },
   { href: '/approvals',     label: 'Approvals',     icon: CheckCircle },
   { href: '/notifications', label: 'Notifications', icon: Bell },
-  { href: '/history',       label: 'History',       icon: Clock },
+  { href: '/reports',       label: 'Reports',       icon: BarChart2 },
   { href: '/suppliers',     label: 'Suppliers',     icon: Store, inactive: true },
 ]
 

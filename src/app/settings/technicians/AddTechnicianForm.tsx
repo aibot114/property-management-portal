@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
-import { UserPlus, X } from 'lucide-react'
+import { UserPlus, X, AlertTriangle } from 'lucide-react'
 
 interface Team {
   id: string
@@ -12,10 +13,11 @@ interface Team {
 
 interface AddTechnicianFormProps {
   teams: Team[]
-  onSuccess: () => void
+  onSuccess?: () => void
 }
 
-export function AddTechnicianForm({ teams, onSuccess }: AddTechnicianFormProps) {
+export function AddTechnicianForm({ teams }: AddTechnicianFormProps) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -48,7 +50,7 @@ export function AddTechnicianForm({ teams, onSuccess }: AddTechnicianFormProps) 
 
     setForm({ full_name: '', wa_number: '', team_id: teams[0]?.id ?? '', employee_id: '' })
     setOpen(false)
-    onSuccess()
+    router.refresh()
   }
 
   if (!open) {
@@ -74,78 +76,96 @@ export function AddTechnicianForm({ teams, onSuccess }: AddTechnicianFormProps) 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
-          <div>
-            <label className="block text-[#A1A1A1] text-xs mb-1.5">Full Name *</label>
-            <input
-              required
-              value={form.full_name}
-              onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
-              placeholder="e.g. Khalid Ibrahim"
-              className="w-full bg-[#1E1E1E] border border-[#272727] rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-[#555555] focus:outline-none focus:border-[#BFF549]/50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[#A1A1A1] text-xs mb-1.5">
-              WhatsApp Number *
-              <span className="text-[#555555] ml-1">(with country code)</span>
-            </label>
-            <input
-              required
-              value={form.wa_number}
-              onChange={e => setForm(f => ({ ...f, wa_number: e.target.value }))}
-              placeholder="+971501234567"
-              className="w-full bg-[#1E1E1E] border border-[#272727] rounded-xl px-3 py-2.5 text-sm text-white font-mono placeholder:text-[#555555] placeholder:font-sans focus:outline-none focus:border-[#BFF549]/50"
-            />
-            <p className="text-[#555555] text-[11px] mt-1">
-              This number receives job cards and bot messages
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-[#A1A1A1] text-xs mb-1.5">Team *</label>
-            <select
-              required
-              value={form.team_id}
-              onChange={e => setForm(f => ({ ...f, team_id: e.target.value }))}
-              className="w-full bg-[#1E1E1E] border border-[#272727] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#BFF549]/50"
-            >
-              {teams.map(team => (
-                <option key={team.id} value={team.id}>
-                  {team.name} — covers: {(team.category_tags as string[]).join(', ')}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[#A1A1A1] text-xs mb-1.5">
-              Employee ID <span className="text-[#555555]">(optional)</span>
-            </label>
-            <input
-              value={form.employee_id}
-              onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))}
-              placeholder="e.g. TECH-003"
-              className="w-full bg-[#1E1E1E] border border-[#272727] rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-[#555555] focus:outline-none focus:border-[#BFF549]/50"
-            />
-          </div>
-
-          {error && (
-            <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
-              {error}
-            </p>
-          )}
-
-          <div className="flex gap-2 pt-2">
-            <Button type="button" variant="ghost" size="md" className="flex-1" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" size="md" className="flex-1" disabled={loading}>
-              {loading ? 'Saving…' : 'Add Technician'}
+        {teams.length === 0 ? (
+          <div className="px-5 py-6">
+            <div className="flex items-start gap-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
+              <AlertTriangle size={16} className="text-yellow-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-yellow-400 text-sm font-medium mb-1">No teams configured</p>
+                <p className="text-[#A1A1A1] text-xs leading-relaxed">
+                  Technicians must belong to a team. Please add at least one team in your Supabase database
+                  (teams table) before adding technicians.
+                </p>
+              </div>
+            </div>
+            <Button type="button" variant="ghost" size="md" className="w-full mt-4" onClick={() => setOpen(false)}>
+              Close
             </Button>
           </div>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+            <div>
+              <label className="block text-[#A1A1A1] text-xs mb-1.5">Full Name *</label>
+              <input
+                required
+                value={form.full_name}
+                onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
+                placeholder="e.g. Khalid Ibrahim"
+                className="w-full bg-[#1E1E1E] border border-[#272727] rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-[#555555] focus:outline-none focus:border-[#BFF549]/50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[#A1A1A1] text-xs mb-1.5">
+                WhatsApp Number *
+                <span className="text-[#555555] ml-1">(with country code)</span>
+              </label>
+              <input
+                required
+                value={form.wa_number}
+                onChange={e => setForm(f => ({ ...f, wa_number: e.target.value }))}
+                placeholder="+971501234567"
+                className="w-full bg-[#1E1E1E] border border-[#272727] rounded-xl px-3 py-2.5 text-sm text-white font-mono placeholder:text-[#555555] placeholder:font-sans focus:outline-none focus:border-[#BFF549]/50"
+              />
+              <p className="text-[#555555] text-[11px] mt-1">
+                This number receives job cards and bot messages
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-[#A1A1A1] text-xs mb-1.5">Team *</label>
+              <select
+                required
+                value={form.team_id}
+                onChange={e => setForm(f => ({ ...f, team_id: e.target.value }))}
+                className="w-full bg-[#1E1E1E] border border-[#272727] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#BFF549]/50"
+              >
+                {teams.map(team => (
+                  <option key={team.id} value={team.id}>
+                    {team.name} — covers: {(team.category_tags as string[]).join(', ')}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[#A1A1A1] text-xs mb-1.5">
+                Employee ID <span className="text-[#555555]">(optional)</span>
+              </label>
+              <input
+                value={form.employee_id}
+                onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))}
+                placeholder="e.g. TECH-003"
+                className="w-full bg-[#1E1E1E] border border-[#272727] rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-[#555555] focus:outline-none focus:border-[#BFF549]/50"
+              />
+            </div>
+
+            {error && (
+              <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+                {error}
+              </p>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <Button type="button" variant="ghost" size="md" className="flex-1" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="md" className="flex-1" disabled={loading}>
+                {loading ? 'Saving…' : 'Add Technician'}
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   )
