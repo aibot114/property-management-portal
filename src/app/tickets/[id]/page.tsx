@@ -20,7 +20,7 @@ export default async function TicketDetailPage({ params }: TicketDetailProps) {
   const { id } = await params
   const supabase = createServerClient()
 
-  const [ticketRes, visitsRes, photosRes, auditRes, approvalRes, techsRes] = await Promise.all([
+  const [ticketRes, visitsRes, photosRes, auditRes, approvalRes, techsRes, teamsRes] = await Promise.all([
     supabase
       .from('tickets')
       .select(`
@@ -58,9 +58,13 @@ export default async function TicketDetailPage({ params }: TicketDetailProps) {
       .maybeSingle(),
     supabase
       .from('technicians')
-      .select('id, full_name, is_active, teams(id, name)')
+      .select('id, full_name, is_active, team_id')
       .eq('company_id', COMPANY_ID)
       .order('full_name'),
+    supabase
+      .from('teams')
+      .select('id, name')
+      .eq('company_id', COMPANY_ID),
   ])
 
   if (!ticketRes.data) notFound()
@@ -70,7 +74,11 @@ export default async function TicketDetailPage({ params }: TicketDetailProps) {
   const photos = (photosRes.data ?? []) as Photo[]
   const auditLog = (auditRes.data ?? []) as AuditEntry[]
   const approval = approvalRes.data as Approval | null
-  const allTechnicians = (techsRes.data ?? []) as any[]
+  const teamsMap = Object.fromEntries((teamsRes.data ?? []).map(t => [t.id, t]))
+  const allTechnicians = (techsRes.data ?? []).map(tech => ({
+    ...tech,
+    teams: tech.team_id ? (teamsMap[tech.team_id] ?? null) : null,
+  }))
 
   return (
     <AppLayout>
