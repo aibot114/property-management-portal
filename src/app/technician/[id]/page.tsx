@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createServerClient, COMPANY_ID } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { TechnicianJobView } from '@/components/technician/TechnicianJobView'
 import type { Visit } from '@/lib/types'
 
@@ -20,7 +21,7 @@ export default async function TechnicianJobPage({ params, searchParams }: Props)
     supabase
       .from('tickets')
       .select(`
-        id, reference_number, status, category, description, is_urgent,
+        id, reference_number, status, category, description, is_urgent, issue_photo_url,
         units(unit_label, properties(name)),
         tenants(full_name)
       `)
@@ -78,12 +79,14 @@ export default async function TechnicianJobPage({ params, searchParams }: Props)
                 : ''}
             </p>
           </div>
-          {technician && (
-            <div className="text-right">
-              <p className="text-white text-xs font-medium">{technician.full_name}</p>
-              <p className="text-[#555555] text-[11px]">Technician</p>
-            </div>
-          )}
+          <div className="text-right">
+            {technician && <p className="text-white text-xs font-medium">{technician.full_name}</p>}
+            {techId && (
+              <Link href={`/technician?tech=${techId}`} className="text-[#555555] text-[11px] hover:text-[#A1A1A1] transition-colors">
+                ← My Jobs
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
@@ -103,6 +106,10 @@ export default async function TechnicianJobPage({ params, searchParams }: Props)
             description={ticket.description}
             isUrgent={ticket.is_urgent}
             tenantName={(ticket.tenants as any)?.full_name ?? null}
+            referenceNumber={ticket.reference_number}
+            unitLabel={(ticket.units as any)?.unit_label ?? null}
+            buildingName={(ticket.units as any)?.properties?.name ?? null}
+            issuePhotoUrl={(ticket as any).issue_photo_url ?? null}
           />
         )}
       </div>

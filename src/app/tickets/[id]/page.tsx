@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { ArrowLeft, MapPin, Clock, User, Wrench, Camera, FileText, AlertTriangle } from 'lucide-react'
 import { ApprovalActions } from './ApprovalActions'
 import { AssignTechnicianForm } from './AssignTechnicianForm'
+import { CloseTicketButton } from './CloseTicketButton'
 
 interface TicketDetailProps {
   params: Promise<{ id: string }>
@@ -197,29 +198,59 @@ export default async function TicketDetailPage({ params }: TicketDetailProps) {
                   </div>
                 )}
 
-                {/* Photos for this visit */}
+                {/* GPS arrival link */}
+                {visit.arrival_proof_value && visit.arrival_proof_type === 'gps_pin' && (
+                  <div>
+                    <p className="text-[#555555] text-xs mb-1 flex items-center gap-1">
+                      <MapPin size={10} /> GPS Arrival
+                    </p>
+                    <a
+                      href={`https://www.google.com/maps?q=${visit.arrival_proof_value}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#BFF549] text-xs font-mono hover:underline"
+                    >
+                      {visit.arrival_proof_value} ↗
+                    </a>
+                    {visit.arrival_flagged_manual && (
+                      <span className="ml-2 text-yellow-400 text-[10px]">⚠ GPS skipped</span>
+                    )}
+                  </div>
+                )}
+
+                {/* Photos for this visit — direct from visit record + photos table */}
                 {(() => {
-                  const visitPhotos = photos.filter(p => p.visit_id === visit.id)
-                  if (!visitPhotos.length) return null
+                  const directPhotos: { url: string; label: string }[] = []
+                  if (visit.before_photo_url) directPhotos.push({ url: visit.before_photo_url, label: 'Before' })
+                  if (visit.after_photo_url)  directPhotos.push({ url: visit.after_photo_url,  label: 'After' })
+                  const tablePhotos = photos.filter(p => p.visit_id === visit.id && !directPhotos.some(d => d.url === p.storage_url))
+                  const allPhotos = [
+                    ...directPhotos.map(p => ({ key: p.url, url: p.url, label: p.label })),
+                    ...tablePhotos.map(p => ({ key: p.id, url: p.storage_url, label: p.photo_type })),
+                  ]
+                  if (!allPhotos.length) return null
                   return (
                     <div>
                       <p className="text-[#555555] text-xs mb-2 flex items-center gap-1">
-                        <Camera size={10} /> Photos
+                        <Camera size={10} /> Visit Photos
                       </p>
                       <div className="grid grid-cols-3 gap-2">
-                        {visitPhotos.map(photo => (
+                        {allPhotos.map(photo => (
                           <a
-                            key={photo.id}
-                            href={photo.storage_url}
+                            key={photo.key}
+                            href={photo.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="aspect-square rounded-xl overflow-hidden bg-[#1E1E1E] border border-[#272727] hover:border-[#BFF549]/50 transition-colors"
+                            className="relative aspect-square rounded-xl overflow-hidden bg-[#1E1E1E] border border-[#272727] hover:border-[#BFF549]/50 transition-colors"
                           >
                             <img
-                              src={photo.storage_url}
-                              alt={photo.photo_type}
+                              src={photo.url}
+                              alt={photo.label}
                               className="w-full h-full object-cover"
                             />
+                            <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded capitalize">
+                              {photo.label}
+                            </span>
                           </a>
                         ))}
                       </div>
@@ -313,6 +344,9 @@ export default async function TicketDetailPage({ params }: TicketDetailProps) {
                   currentTechId={ticket.assigned_tech_id}
                   technicians={allTechnicians}
                 />
+              )}
+              {ticket.status === 'in_progress' && (
+                <CloseTicketButton ticketId={ticket.id} />
               )}
               {(ticket.status === 'closed' || ticket.status === 'cancelled') && (
                 <div>

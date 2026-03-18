@@ -121,6 +121,10 @@ export async function POST(req: Request) {
 
   const newTicketStatus = canFixNow ? 'in_progress' : 'awaiting_parts'
 
+  // Fetch actual current status before writing audit log
+  const { data: ticketNow } = await supabase
+    .from('tickets').select('status').eq('id', ticketId).single()
+
   const [ticketUpdate, auditInsert] = await Promise.all([
     supabase
       .from('tickets')
@@ -130,11 +134,12 @@ export async function POST(req: Request) {
     supabase
       .from('audit_log')
       .insert({
+        company_id:      COMPANY_ID,
         ticket_id:       ticketId,
         actor_id:        technicianId || null,
         actor_role:      'technician',
         action:          canFixNow ? 'visit_completed' : 'visit_parts_needed',
-        previous_status: 'assigned',
+        previous_status: ticketNow?.status ?? 'assigned',
         new_status:      newTicketStatus,
         metadata:        { visit_id: visitId, visit_number: visitNumber, can_fix_now: canFixNow },
       }),

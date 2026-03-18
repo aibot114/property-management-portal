@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { MapPin, Camera, CheckCircle2, XCircle, Loader2, ChevronRight, AlertTriangle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { MapPin, Camera, CheckCircle2, XCircle, Loader2, ChevronRight, AlertTriangle, FileText, ArrowLeft } from 'lucide-react'
 
 interface Props {
   ticketId: string
@@ -11,9 +12,14 @@ interface Props {
   description: string
   isUrgent: boolean
   tenantName: string | null
+  referenceNumber: string
+  unitLabel: string | null
+  buildingName: string | null
+  issuePhotoUrl: string | null
 }
 
 type Step =
+  | 'brief'
   | 'arrival'
   | 'before_photo'
   | 'diagnosis'
@@ -28,6 +34,8 @@ interface GPS {
   flaggedManual: boolean
 }
 
+const TOTAL_STEPS = 4
+
 export function TechnicianJobView({
   ticketId,
   technicianId,
@@ -36,8 +44,12 @@ export function TechnicianJobView({
   description,
   isUrgent,
   tenantName,
+  referenceNumber,
+  unitLabel,
+  buildingName,
+  issuePhotoUrl,
 }: Props) {
-  const [step, setStep] = useState<Step>('arrival')
+  const [step, setStep] = useState<Step>('brief')
   const [gps, setGps] = useState<GPS | null>(null)
   const [gpsLoading, setGpsLoading] = useState(false)
   const [gpsError, setGpsError] = useState<string | null>(null)
@@ -55,6 +67,7 @@ export function TechnicianJobView({
 
   const beforeInputRef = useRef<HTMLInputElement>(null)
   const afterInputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
 
   // ─── GPS Capture ─────────────────────────────────────────────────────────────
 
@@ -75,7 +88,7 @@ export function TechnicianJobView({
         })
         setGpsLoading(false)
       },
-      (err) => {
+      () => {
         setGpsError('Could not get your location. Please enable GPS and try again.')
         setGpsLoading(false)
       },
@@ -144,26 +157,99 @@ export function TechnicianJobView({
     }
   }
 
+  const currentStepNum = step === 'brief' ? 0 : step === 'arrival' ? 1 : step === 'before_photo' ? 2 : step === 'diagnosis' ? 3 : 4
+
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-4">
-      {/* Job summary card */}
-      <div className="bg-[#161616] rounded-2xl border border-[#272727] px-5 py-4 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[#555555] text-xs uppercase tracking-wider">{category}</span>
-          {isUrgent && (
-            <span className="flex items-center gap-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full px-2 py-0.5 text-[11px]">
-              <AlertTriangle size={10} /> Urgent
-            </span>
+
+      {/* Step: Job Brief */}
+      {step === 'brief' && (
+        <div className="space-y-4">
+          {/* Ticket info card */}
+          <div className="bg-[#161616] rounded-2xl border border-[#272727] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#272727]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#BFF549] font-mono text-sm font-bold">{referenceNumber}</span>
+                  <span className="text-[#555555] text-xs">· Visit {visitNumber} of 2</span>
+                </div>
+                {isUrgent && (
+                  <span className="flex items-center gap-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full px-2 py-0.5 text-[11px]">
+                    <AlertTriangle size={10} /> Urgent
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="px-5 py-4 space-y-3">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <p className="text-[#555555] text-[11px] uppercase tracking-wider mb-1">Unit</p>
+                  <p className="text-white text-sm font-medium">
+                    {unitLabel ?? '—'}
+                    {buildingName && <span className="text-[#555555] font-normal"> · {buildingName}</span>}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[#555555] text-[11px] uppercase tracking-wider mb-1">Category</p>
+                  <span className="text-[#A1A1A1] text-xs capitalize">{category}</span>
+                </div>
+              </div>
+
+              {tenantName && (
+                <div>
+                  <p className="text-[#555555] text-[11px] uppercase tracking-wider mb-1">Tenant</p>
+                  <p className="text-[#A1A1A1] text-sm">{tenantName}</p>
+                </div>
+              )}
+
+              <div>
+                <p className="text-[#555555] text-[11px] uppercase tracking-wider mb-1">Issue Description</p>
+                <p className="text-[#A1A1A1] text-sm leading-relaxed">{description}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Issue photo */}
+          {issuePhotoUrl && (
+            <div className="rounded-2xl overflow-hidden border border-[#272727]">
+              <p className="text-[#555555] text-[11px] uppercase tracking-wider px-4 py-2.5 bg-[#161616] border-b border-[#272727]">
+                Issue Photo (submitted by tenant)
+              </p>
+              <a href={issuePhotoUrl} target="_blank" rel="noopener noreferrer">
+                <img
+                  src={issuePhotoUrl}
+                  alt="Issue"
+                  className="w-full object-cover max-h-56 hover:opacity-90 transition-opacity"
+                />
+              </a>
+            </div>
           )}
+
+          {/* Start button */}
+          <button
+            onClick={() => setStep('arrival')}
+            className="w-full flex items-center justify-center gap-2 bg-[#BFF549] text-black font-semibold rounded-xl py-4 text-sm"
+          >
+            <FileText size={16} />
+            I'm on site — Start Visit
+          </button>
         </div>
-        <p className="text-[#A1A1A1] text-sm leading-relaxed">{description}</p>
-        {tenantName && (
-          <p className="text-[#555555] text-xs">Tenant: <span className="text-white">{tenantName}</span></p>
-        )}
-        <p className="text-[#555555] text-xs">Visit {visitNumber} of 2</p>
-      </div>
+      )}
+
+      {/* Progress indicator (shown during active steps) */}
+      {step !== 'brief' && step !== 'done' && (
+        <div className="flex items-center gap-1.5 px-1">
+          {[1, 2, 3, 4].map(n => (
+            <div
+              key={n}
+              className={`h-1 flex-1 rounded-full transition-colors ${n <= currentStepNum ? 'bg-[#BFF549]' : 'bg-[#272727]'}`}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Step: Arrival */}
       {step === 'arrival' && (
@@ -187,14 +273,24 @@ export function TechnicianJobView({
             <p className="text-red-400 text-xs mb-3">{gpsError}</p>
           )}
           {!gps ? (
-            <button
-              onClick={captureGPS}
-              disabled={gpsLoading}
-              className="w-full flex items-center justify-center gap-2 bg-[#BFF549] text-black font-semibold rounded-xl py-3.5 text-sm disabled:opacity-50"
-            >
-              {gpsLoading ? <Loader2 size={16} className="animate-spin" /> : <MapPin size={16} />}
-              {gpsLoading ? 'Getting location…' : 'Capture GPS Location'}
-            </button>
+            <>
+              <button
+                onClick={captureGPS}
+                disabled={gpsLoading}
+                className="w-full flex items-center justify-center gap-2 bg-[#BFF549] text-black font-semibold rounded-xl py-3.5 text-sm disabled:opacity-50"
+              >
+                {gpsLoading ? <Loader2 size={16} className="animate-spin" /> : <MapPin size={16} />}
+                {gpsLoading ? 'Getting location…' : 'Capture GPS Location'}
+              </button>
+              {/* GPS help text */}
+              <div className="mt-3 bg-[#1E1E1E] rounded-xl px-4 py-3">
+                <p className="text-[#555555] text-[11px] leading-relaxed">
+                  <span className="text-[#A1A1A1] font-medium">GPS not working?</span><br />
+                  <span className="font-medium text-[#777]">iPhone:</span> Settings → Privacy &amp; Security → Location Services → [your browser] → While Using App<br />
+                  <span className="font-medium text-[#777]">Android:</span> Settings → Location → Turn On, then allow browser when prompted
+                </p>
+              </div>
+            </>
           ) : (
             <button
               onClick={() => setStep('before_photo')}
@@ -211,7 +307,7 @@ export function TechnicianJobView({
               }}
               className="w-full mt-2 text-[#555555] text-xs underline py-2"
             >
-              Skip GPS (will be flagged)
+              Skip GPS (will be flagged for office review)
             </button>
           )}
         </StepCard>
@@ -221,7 +317,7 @@ export function TechnicianJobView({
       {step === 'before_photo' && (
         <StepCard title="Step 2 — Before Photo" stepNum={2}>
           <p className="text-[#A1A1A1] text-sm mb-4">
-            Take a photo of the issue before you start work.
+            Take a clear photo of the issue before you start work.
           </p>
           {beforePreview ? (
             <div className="mb-4">
@@ -295,7 +391,7 @@ export function TechnicianJobView({
           <div className="space-y-4">
             {/* After photo */}
             <div>
-              <label className="text-[#555555] text-xs mb-2 block">After Photo</label>
+              <label className="text-[#555555] text-xs mb-2 block">After Photo (recommended)</label>
               {afterPreview ? (
                 <div>
                   <img
@@ -355,9 +451,7 @@ export function TechnicianJobView({
               />
             </div>
 
-            {submitError && (
-              <p className="text-red-400 text-xs">{submitError}</p>
-            )}
+            {submitError && <p className="text-red-400 text-xs">{submitError}</p>}
 
             <button
               onClick={handleSubmit}
@@ -398,9 +492,7 @@ export function TechnicianJobView({
               />
             </div>
 
-            {submitError && (
-              <p className="text-red-400 text-xs">{submitError}</p>
-            )}
+            {submitError && <p className="text-red-400 text-xs">{submitError}</p>}
 
             <button
               onClick={handleSubmit}
@@ -423,10 +515,18 @@ export function TechnicianJobView({
           <h2 className="text-white font-semibold text-lg mb-2">Job card submitted</h2>
           <p className="text-[#A1A1A1] text-sm">
             {canFixNow
-              ? 'Great work. The ticket will be reviewed and closed by the office.'
+              ? 'Great work. The office will review and close the ticket.'
               : 'Parts request logged. The office will follow up on procurement.'}
           </p>
-          <p className="text-[#555555] text-xs mt-4">You can close this page.</p>
+          {technicianId && (
+            <a
+              href={`/technician?tech=${technicianId}`}
+              className="mt-6 inline-flex items-center gap-2 bg-[#BFF549] text-black font-semibold rounded-xl px-6 py-3 text-sm"
+            >
+              <ArrowLeft size={15} />
+              Back to My Jobs
+            </a>
+          )}
         </div>
       )}
     </div>
