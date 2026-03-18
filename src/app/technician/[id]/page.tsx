@@ -4,7 +4,6 @@ import { createServerClient, COMPANY_ID } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { TechnicianJobView } from '@/components/technician/TechnicianJobView'
-import type { Visit } from '@/lib/types'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -30,7 +29,7 @@ export default async function TechnicianJobPage({ params, searchParams }: Props)
       .single(),
     supabase
       .from('visits')
-      .select('id, visit_number, arrived_at, can_fix_now')
+      .select('id, visit_number, arrived_at, can_fix_now, fix_notes, cost_aed, parts_description, created_at')
       .eq('ticket_id', id)
       .order('visit_number'),
     techId
@@ -63,12 +62,15 @@ export default async function TechnicianJobPage({ params, searchParams }: Props)
       // Non-fatal — keep original URL; client will show fallback on error
     }
   }
-  const visits = (visitsRes.data ?? []) as Pick<Visit, 'id' | 'visit_number' | 'arrived_at' | 'can_fix_now'>[]
+  const visits = (visitsRes.data ?? []) as any[]
   const technician = techRes.data as { id: string; full_name: string } | null
 
   // Determine next visit number (max 2 visits allowed)
-  const completedVisits = visits.filter(v => v.arrived_at !== null)
+  const completedVisits = visits.filter((v: any) => v.arrived_at !== null)
   const nextVisitNumber = (completedVisits.length + 1) as 1 | 2
+
+  // Pass visit 1 notes to the job form so tech can review what was done before
+  const previousVisit = nextVisitNumber === 2 ? (visits.find((v: any) => v.visit_number === 1) ?? null) : null
 
   if (nextVisitNumber > 2) {
     return (
@@ -128,6 +130,7 @@ export default async function TechnicianJobPage({ params, searchParams }: Props)
             unitLabel={(ticket.units as any)?.unit_label ?? null}
             buildingName={(ticket.units as any)?.properties?.name ?? null}
             issuePhotoUrl={issuePhotoUrl}
+            previousVisit={previousVisit}
           />
         )}
       </div>

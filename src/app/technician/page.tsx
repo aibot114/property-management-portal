@@ -69,8 +69,8 @@ export default async function TechnicianDashboardPage({ searchParams }: Props) {
       .select('id, reference_number, status, category, description, created_at, closed_at, units(unit_label, properties(name))')
       .eq('assigned_tech_id', techId)
       .eq('company_id', COMPANY_ID)
-      .in('status', ['closed', 'cancelled'])
-      .order('closed_at', { ascending: false })
+      .in('status', ['closed', 'cancelled', 'awaiting_approval', 'awaiting_parts'])
+      .order('created_at', { ascending: false })
       .limit(15),
   ])
 

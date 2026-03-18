@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { History, ChevronDown, ChevronUp, Clock, CheckCircle2, XCircle } from 'lucide-react'
+import { History, ChevronDown, ChevronUp, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 
 interface HistoryTicket {
   id: string
@@ -50,7 +50,7 @@ export function HistorySection({ tickets }: Props) {
       >
         <div className="flex items-center gap-2">
           <History size={15} className="text-[#555555]" />
-          <span className="text-[#A1A1A1] text-sm font-medium">Job History</span>
+          <span className="text-[#A1A1A1] text-sm font-medium">Previous Work</span>
           <span className="bg-[#272727] text-[#555555] rounded-full px-2 py-0.5 text-[11px] font-medium">
             {tickets.length}
           </span>
@@ -67,7 +67,12 @@ export function HistorySection({ tickets }: Props) {
             const catColor = CATEGORY_COLORS[ticket.category] ?? CATEGORY_COLORS.other
             const unit = ticket.units?.unit_label ?? '—'
             const building = ticket.units?.properties?.name ?? ''
-            const isCancelled = ticket.status === 'cancelled'
+            const { icon, label, color } =
+              ticket.status === 'cancelled'       ? { icon: <XCircle size={12} />,     label: 'Cancelled',         color: 'text-zinc-500' }
+            : ticket.status === 'closed'          ? { icon: <CheckCircle2 size={12} />, label: 'Closed',            color: 'text-[#BFF549]' }
+            : ticket.status === 'awaiting_approval' ? { icon: <AlertCircle size={12} />, label: 'Needs Approval',    color: 'text-yellow-400' }
+            : ticket.status === 'awaiting_parts'  ? { icon: <AlertCircle size={12} />, label: 'Awaiting Parts',    color: 'text-orange-400' }
+            : { icon: <Clock size={12} />, label: ticket.status, color: 'text-[#555555]' }
 
             return (
               <div
@@ -81,14 +86,9 @@ export function HistorySection({ tickets }: Props) {
                       {ticket.category}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {isCancelled
-                      ? <XCircle size={12} className="text-zinc-500" />
-                      : <CheckCircle2 size={12} className="text-[#BFF549]" />
-                    }
-                    <span className={`text-[11px] ${isCancelled ? 'text-zinc-500' : 'text-[#BFF549]'}`}>
-                      {isCancelled ? 'Cancelled' : 'Closed'}
-                    </span>
+                  <div className={`flex items-center gap-1.5 shrink-0 ${color}`}>
+                    {icon}
+                    <span className="text-[11px]">{label}</span>
                   </div>
                 </div>
 

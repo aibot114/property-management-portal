@@ -55,7 +55,7 @@ export function StatusDropdown({ ticketId, currentStatus }: Props) {
       onChange={handleChange}
       onClick={(e) => e.stopPropagation()}
       disabled={isPending}
-      className={`rounded-full border px-2.5 py-0.5 text-xs font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/10 disabled:opacity-50 transition-opacity appearance-none ${style}`}
+      className={`rounded-full border pl-2.5 pr-6 py-0.5 text-xs font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/10 disabled:opacity-50 transition-opacity ${style}`}
     >
       {STATUS_OPTIONS.map(opt => (
         <option key={opt.value} value={opt.value} className="bg-[#1E1E1E] text-white">

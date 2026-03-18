@@ -4,6 +4,14 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { MapPin, Camera, CheckCircle2, XCircle, Loader2, ChevronRight, AlertTriangle, FileText, ArrowLeft } from 'lucide-react'
 
+interface PreviousVisit {
+  fix_notes: string | null
+  cost_aed: number | null
+  parts_description: string | null
+  can_fix_now: boolean | null
+  created_at: string
+}
+
 interface Props {
   ticketId: string
   technicianId: string | null
@@ -16,6 +24,7 @@ interface Props {
   unitLabel: string | null
   buildingName: string | null
   issuePhotoUrl: string | null
+  previousVisit: PreviousVisit | null
 }
 
 type Step =
@@ -48,6 +57,7 @@ export function TechnicianJobView({
   unitLabel,
   buildingName,
   issuePhotoUrl,
+  previousVisit,
 }: Props) {
   const [step, setStep] = useState<Step>('brief')
   const [gps, setGps] = useState<GPS | null>(null)
@@ -98,7 +108,7 @@ export function TechnicianJobView({
           setGpsError('Could not get your location. Please allow location access in your browser settings and try again.')
           setGpsLoading(false)
         },
-        { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 }
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
       )
     }
 
@@ -115,7 +125,7 @@ export function TechnicianJobView({
         // TIMEOUT or POSITION_UNAVAILABLE — retry with low accuracy (WiFi/cell, works indoors)
         tryLowAccuracy()
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
     )
   }
 
@@ -235,6 +245,38 @@ export function TechnicianJobView({
             </div>
           </div>
 
+          {/* Previous visit notes — shown on visit 2 so tech can review what was done */}
+          {previousVisit && (
+            <div className="bg-[#1A1A2E] rounded-2xl border border-amber-500/20 overflow-hidden">
+              <div className="px-5 py-3 border-b border-amber-500/20 flex items-center gap-2">
+                <span className="text-amber-400 text-[11px] uppercase tracking-wider font-semibold">Visit 1 Notes — Review Before Starting</span>
+              </div>
+              <div className="px-5 py-4 space-y-3">
+                {previousVisit.can_fix_now === false && (
+                  <p className="text-amber-400 text-xs font-medium">⚠️ Previous visit: could not fix — parts were needed</p>
+                )}
+                {previousVisit.fix_notes && (
+                  <div>
+                    <p className="text-[#555555] text-[11px] uppercase tracking-wider mb-1">What was done</p>
+                    <p className="text-[#A1A1A1] text-sm leading-relaxed">{previousVisit.fix_notes}</p>
+                  </div>
+                )}
+                {previousVisit.parts_description && (
+                  <div>
+                    <p className="text-[#555555] text-[11px] uppercase tracking-wider mb-1">Parts needed</p>
+                    <p className="text-[#A1A1A1] text-sm">{previousVisit.parts_description}</p>
+                  </div>
+                )}
+                {previousVisit.cost_aed != null && (
+                  <div>
+                    <p className="text-[#555555] text-[11px] uppercase tracking-wider mb-1">Estimated cost</p>
+                    <p className="text-amber-400 text-sm font-semibold">AED {previousVisit.cost_aed}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Issue photo */}
           {issuePhotoUrl && (
             <div className="rounded-2xl overflow-hidden border border-[#272727]">
@@ -312,6 +354,12 @@ export function TechnicianJobView({
                 {gpsLoading ? <Loader2 size={16} className="animate-spin" /> : <MapPin size={16} />}
                 {gpsLoading ? 'Getting location…' : 'Capture GPS Location'}
               </button>
+              {gpsLoading && (
+                <div className="mt-3 flex items-center gap-2 bg-[#BFF549]/5 border border-[#BFF549]/20 rounded-xl px-4 py-3">
+                  <Loader2 size={13} className="animate-spin text-[#BFF549] shrink-0" />
+                  <p className="text-[#BFF549] text-xs">Searching for your location — please wait up to 5 seconds…</p>
+                </div>
+              )}
               {/* GPS help text */}
               <div className="mt-3 bg-[#1E1E1E] rounded-xl px-4 py-3">
                 <p className="text-[#555555] text-[11px] leading-relaxed">
