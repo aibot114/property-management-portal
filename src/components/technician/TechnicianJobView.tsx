@@ -64,6 +64,7 @@ export function TechnicianJobView({
   const [partsEstCost, setPartsEstCost] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [issuePhotoFailed, setIssuePhotoFailed] = useState(false)
 
   const beforeInputRef = useRef<HTMLInputElement>(null)
   const afterInputRef = useRef<HTMLInputElement>(null)
@@ -78,21 +79,43 @@ export function TechnicianJobView({
     }
     setGpsLoading(true)
     setGpsError(null)
+
+    function onSuccess(pos: GeolocationPosition) {
+      setGps({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: Math.round(pos.coords.accuracy),
+        flaggedManual: false,
+      })
+      setGpsLoading(false)
+    }
+
+    // Low-accuracy fallback uses WiFi/cell tower — works indoors when GPS signal is weak
+    function tryLowAccuracy() {
+      navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        () => {
+          setGpsError('Could not get your location. Please allow location access in your browser settings and try again.')
+          setGpsLoading(false)
+        },
+        { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 }
+      )
+    }
+
+    // First try high-accuracy GPS; silently fall back if it times out or is unavailable
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setGps({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: Math.round(pos.coords.accuracy),
-          flaggedManual: false,
-        })
-        setGpsLoading(false)
+      onSuccess,
+      (err) => {
+        if (err.code === 1) {
+          // PERMISSION_DENIED — retrying won't help
+          setGpsError('Location permission denied. Please allow location access in your browser settings, then try again.')
+          setGpsLoading(false)
+          return
+        }
+        // TIMEOUT or POSITION_UNAVAILABLE — retry with low accuracy (WiFi/cell, works indoors)
+        tryLowAccuracy()
       },
-      () => {
-        setGpsError('Could not get your location. Please enable GPS and try again.')
-        setGpsLoading(false)
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     )
   }
 
@@ -218,13 +241,20 @@ export function TechnicianJobView({
               <p className="text-[#555555] text-[11px] uppercase tracking-wider px-4 py-2.5 bg-[#161616] border-b border-[#272727]">
                 Issue Photo (submitted by tenant)
               </p>
-              <a href={issuePhotoUrl} target="_blank" rel="noopener noreferrer">
-                <img
-                  src={issuePhotoUrl}
-                  alt="Issue"
-                  className="w-full object-cover max-h-56 hover:opacity-90 transition-opacity"
-                />
-              </a>
+              {issuePhotoFailed ? (
+                <div className="px-4 py-8 text-center bg-[#161616]">
+                  <p className="text-[#555555] text-xs">Photo not available</p>
+                </div>
+              ) : (
+                <a href={issuePhotoUrl} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={issuePhotoUrl}
+                    alt="Issue"
+                    className="w-full object-cover max-h-56 hover:opacity-90 transition-opacity"
+                    onError={() => setIssuePhotoFailed(true)}
+                  />
+                </a>
+              )}
             </div>
           )}
 

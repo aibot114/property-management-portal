@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { createServerClient, COMPANY_ID } from '@/lib/supabase-server'
 import Link from 'next/link'
 import { AlertTriangle, Wrench, Clock } from 'lucide-react'
+import { HistorySection } from '@/components/technician/HistorySection'
 
 interface Props {
   searchParams: Promise<{ tech?: string }>
@@ -48,7 +49,7 @@ export default async function TechnicianDashboardPage({ searchParams }: Props) {
 
   const supabase = createServerClient()
 
-  const [techRes, ticketsRes] = await Promise.all([
+  const [techRes, ticketsRes, historyRes] = await Promise.all([
     supabase
       .from('technicians')
       .select('full_name')
@@ -63,10 +64,19 @@ export default async function TechnicianDashboardPage({ searchParams }: Props) {
       .not('status', 'in', '(closed,cancelled)')
       .order('is_urgent', { ascending: false })
       .order('created_at'),
+    supabase
+      .from('tickets')
+      .select('id, reference_number, status, category, description, created_at, closed_at, units(unit_label, properties(name))')
+      .eq('assigned_tech_id', techId)
+      .eq('company_id', COMPANY_ID)
+      .in('status', ['closed', 'cancelled'])
+      .order('closed_at', { ascending: false })
+      .limit(15),
   ])
 
   const tech = techRes.data
   const tickets = (ticketsRes.data ?? []) as any[]
+  const history = (historyRes.data ?? []) as any[]
 
   if (!tech) {
     return (
@@ -182,6 +192,8 @@ export default async function TechnicianDashboardPage({ searchParams }: Props) {
             })}
           </div>
         )}
+
+        <HistorySection tickets={history} />
       </div>
     </div>
   )

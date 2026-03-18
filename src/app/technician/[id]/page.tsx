@@ -45,6 +45,24 @@ export default async function TechnicianJobPage({ params, searchParams }: Props)
   if (!ticketRes.data) notFound()
 
   const ticket = ticketRes.data
+
+  // Re-sign the issue photo URL using the service key so stale/invalid tokens are refreshed.
+  // Extracts the storage path from the stored URL and generates a fresh 10-year signed URL.
+  let issuePhotoUrl: string | null = (ticket as any).issue_photo_url ?? null
+  if (issuePhotoUrl) {
+    try {
+      const BUCKET = 'mrn-group-evidence'
+      const match = issuePhotoUrl.match(new RegExp(`/object/sign/${BUCKET}/([^?]+)`))
+      if (match?.[1]) {
+        const { data: signed } = await supabase.storage
+          .from(BUCKET)
+          .createSignedUrl(match[1], 60 * 60 * 24 * 365 * 10)
+        if (signed?.signedUrl) issuePhotoUrl = signed.signedUrl
+      }
+    } catch {
+      // Non-fatal — keep original URL; client will show fallback on error
+    }
+  }
   const visits = (visitsRes.data ?? []) as Pick<Visit, 'id' | 'visit_number' | 'arrived_at' | 'can_fix_now'>[]
   const technician = techRes.data as { id: string; full_name: string } | null
 
@@ -109,7 +127,7 @@ export default async function TechnicianJobPage({ params, searchParams }: Props)
             referenceNumber={ticket.reference_number}
             unitLabel={(ticket.units as any)?.unit_label ?? null}
             buildingName={(ticket.units as any)?.properties?.name ?? null}
-            issuePhotoUrl={(ticket as any).issue_photo_url ?? null}
+            issuePhotoUrl={issuePhotoUrl}
           />
         )}
       </div>

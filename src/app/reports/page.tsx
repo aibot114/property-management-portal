@@ -66,7 +66,7 @@ export default async function ReportsPage({ searchParams }: ReportsProps) {
     })(),
     supabase
       .from('visits')
-      .select('cost_aed, created_at, technician_id')
+      .select('ticket_id, cost_aed, created_at, technician_id')
       .eq('company_id', COMPANY_ID)
       .gte('created_at', dateFrom)
       .lte('created_at', dateTo + 'T23:59:59'),
@@ -90,7 +90,15 @@ export default async function ReportsPage({ searchParams }: ReportsProps) {
   ])
 
   const tickets    = (ticketsRes.data    ?? []) as any[]
-  const visits     = (visitsRes.data     ?? []) as any[]
+  const allVisits  = (visitsRes.data     ?? []) as any[]
+  // When a dimension filter (category / tech / property) is active, restrict visits
+  // to only those belonging to the already-filtered tickets so cost KPIs stay in sync.
+  const visits = (category || tech_id || property_id)
+    ? (() => {
+        const ids = new Set(tickets.map((t: any) => t.id))
+        return allVisits.filter((v: any) => ids.has(v.ticket_id))
+      })()
+    : allVisits
   const approvals  = (approvalsRes.data  ?? []) as any[]
   const techs      = (techsRes.data      ?? []) as any[]
   const properties = (propertiesRes.data ?? []) as any[]

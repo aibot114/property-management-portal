@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Badge, UrgentDot } from '@/components/ui/Badge'
+import { StatusDropdown } from '@/components/tickets/StatusDropdown'
 import { timeAgo } from '@/lib/utils'
 import type { Ticket } from '@/lib/types'
 import { ChevronRight } from 'lucide-react'
@@ -36,7 +37,7 @@ export function TicketTable({ tickets }: TicketTableProps) {
               <div className="flex items-center gap-2 mb-1">
                 {ticket.is_urgent && <UrgentDot />}
                 <span className="font-mono text-[#BFF549] text-xs font-medium">{ticket.reference_number}</span>
-                <Badge variant="status" value={ticket.status} />
+                <StatusDropdown ticketId={ticket.id} currentStatus={ticket.status} />
               </div>
               <p className="text-[#A1A1A1] text-xs truncate mb-1">{ticket.description}</p>
               <div className="flex items-center gap-2 flex-wrap">
@@ -94,7 +95,7 @@ export function TicketTable({ tickets }: TicketTableProps) {
                   <p className="text-[#A1A1A1] text-xs truncate">{ticket.description}</p>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <Badge variant="status" value={ticket.status} />
+                  <StatusDropdown ticketId={ticket.id} currentStatus={ticket.status} />
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <p className="text-[#A1A1A1] text-xs">

@@ -117,15 +117,22 @@ export async function POST(req: Request) {
     await supabase.from('photos').insert(photoRows)
   }
 
-  // ─── 5. Update ticket status ───────────────────────────────────────────────
+  // ─── 5. Update ticket status (with approval threshold check) ─────────────
 
-  const newTicketStatus = canFixNow ? 'in_progress' : 'awaiting_parts'
+  const APPROVAL_THRESHOLD_AED = 500
+  const needsApproval = canFixNow && costAed !== null && costAed >= APPROVAL_THRESHOLD_AED
+
+  const newTicketStatus = needsApproval
+    ? 'awaiting_approval'
+    : canFixNow
+    ? 'in_progress'
+    : 'awaiting_parts'
 
   // Fetch actual current status before writing audit log
   const { data: ticketNow } = await supabase
     .from('tickets').select('status').eq('id', ticketId).single()
 
-  const [ticketUpdate, auditInsert] = await Promise.all([
+  const [ticketUpdate] = await Promise.all([
     supabase
       .from('tickets')
       .update({ status: newTicketStatus, assigned_tech_id: technicianId || undefined, updated_at: new Date().toISOString() })
@@ -138,15 +145,33 @@ export async function POST(req: Request) {
         ticket_id:       ticketId,
         actor_id:        technicianId || null,
         actor_role:      'technician',
-        action:          canFixNow ? 'visit_completed' : 'visit_parts_needed',
+        action:          needsApproval ? 'approval_triggered' : (canFixNow ? 'visit_completed' : 'visit_parts_needed'),
         previous_status: ticketNow?.status ?? 'assigned',
         new_status:      newTicketStatus,
-        metadata:        { visit_id: visitId, visit_number: visitNumber, can_fix_now: canFixNow },
+        metadata:        { visit_id: visitId, visit_number: visitNumber, can_fix_now: canFixNow, cost_aed: costAed },
       }),
   ])
 
   if (ticketUpdate.error) {
     console.error('Ticket status update error:', ticketUpdate.error)
+  }
+
+  // ─── 5b. Insert approval record when cost exceeds threshold ───────────────
+
+  if (needsApproval) {
+    const { error: approvalError } = await supabase
+      .from('approvals')
+      .insert({
+        company_id:    COMPANY_ID,
+        ticket_id:     ticketId,
+        visit_id:      visitId,
+        required:      true,
+        threshold_aed: APPROVAL_THRESHOLD_AED,
+        status:        'pending',
+      })
+    if (approvalError) {
+      console.error('Approval insert error:', approvalError)
+    }
   }
 
   // ─── 6. Trigger WF02 (pm-visit-submitted) ─────────────────────────────────
